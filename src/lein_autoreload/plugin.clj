@@ -11,7 +11,8 @@
       (eval/eval-in (assoc project :eval-in :nrepl)
         '(do
           (require 'clojure.tools.namespace.repl)
-          (clojure.tools.namespace.repl/refresh))))
+          (clojure.tools.namespace.repl/refresh)
+          (clojure.main/repl-prompt)))
     (catch Throwable e (println (.getStackTrace e))))
   (Thread/sleep 1000))
 
