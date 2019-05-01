@@ -5,25 +5,22 @@
     [ns-tracker.core :as tracker]
     [robert.hooke]))
 
-(defn refresh-aliases [ns]
-  (doseq [aliased (ns-aliases ns)]
-    (let [sym (first aliased)
-          ns (second aliased)]
-      (ns-unalias *ns* sym)
-      (alias sym (.getName ns)))))
-
 (defn reload [project track]
   (try
     (if (> (count (track)) 0)
       (eval/eval-in (assoc project :eval-in :nrepl)
         '(do
+          (when-not (if-let [v (resolve 'my-aliases)] (bound? v) false)
+            (def my-aliases (atom (ns-aliases *ns*))))
+          (reset! my-aliases (merge @my-aliases (ns-aliases *ns*)))
           (require 'clojure.tools.namespace.repl)
-          (clojure.tools.namespace.repl/refresh :after 'clojure.main/repl-prompt)
-          (doseq [aliased (ns-aliases *ns*)]
+          (clojure.tools.namespace.repl/refresh
+            :after 'clojure.main/repl-prompt)
+          (doseq [aliased @my-aliases]
             (let [sym (first aliased)
                   target (second aliased)]
               (ns-unalias *ns* sym)
-              (alias sym (.getName target)))))))
+              (alias sym (symbol (.toString target))))))))
     (catch Throwable e (println (.getStackTrace e))))
   (Thread/sleep 1000))
 
